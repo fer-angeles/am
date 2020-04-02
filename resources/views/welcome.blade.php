@@ -4,13 +4,16 @@
     <br><br>
     <div class="row align-items-center my-5">
         <div class="col-lg-7">
-            <img class="img-fluid rounded mb-4 mb-lg-0" src="img/ap20093140122968_1.jpg" alt="" style="">
+            <img class="img-fluid rounded mb-4 mb-lg-0" src="{{ asset('img/'.$first->img) }}" alt="{{ $first->url }}" title="{{ $first->url }}" style="">
         </div>
         <!-- /.col-lg-8 -->
         <div class="col-lg-5">
-            <h1 class="font-weight-light">México pide a sus migrantes en Estados Unidos no regresar de momento</h1>
-            <p>CDMX.- México generalmente recibe con los brazos abiertos a sus migrantes que viven en Estados Unidos, en parte porque los dólares que envían a sus hogares sostienen la economía. Sin embargo, ahora el gobierno los ha exhortado a que no vengan debido al peligro de que propaguen el coronavirus.</p>
-            <a class="btn btn-primary" href="#">Leer más</a>
+            <a href="{{ route('news.detail',[ 'url' => $first->url, 'date' => $first->created_at->format('Ymd'), 'id' => $first->id  ]) }}">
+                <h1 class="font-weight-light">
+                    {{ $first->title }}
+                </h1>
+            </a>
+            <p>{!! htmlspecialchars_decode($first->abstract) !!}</p>
         </div>
         <!-- /.col-md-4 -->
     </div>
@@ -26,50 +29,93 @@
                         <i class="fa fa-search" aria-hidden="true"></i>
                     </span>
                 </div>
-                <input type="text" class="form-control" id="validationCustomUsername" aria-describedby="inputGroupPrepend" placeholder="¿Qué buscas?">
+                <input type="text" class="form-control" id="buscador" aria-describedby="inputGroupPrepend" placeholder="¿Qué buscas?">
             </div>
             </p>
         </div>
     </div>
 
     <!-- Content Row -->
-    <div class="row">
-        <div class="col-md-4 mb-5">
-            <div class="card h-100">
-                <img src="{{ asset('img/piden_a_iglesias_difundir_mensaje_para_que_fieles_permanezcan_en_sus_casas.jpg') }}" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">Card title</h5>
-                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                    <a href="#" class="btn btn-primary">Go somewhere</a>
+    @if( isset($news) )
+        <div class="groupNews">
+            <div class="loaderNews" style="display: none; margin: 0 auto;" >
+                <i class="fa fa-spin fa-spinner"></i>
+            </div>
+            <div class="contentNews">
+                <div class="row">
+                    @foreach($news as $new)
+                        <div class="col-md-4 mb-5">
+                            <div class="card h-100">
+                                <img src="{{ asset('img/'.$new->img) }}" class="card-img-top" alt="{{ $new->title }}" title="{{ $new->title }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="{{ route('news.detail',[ 'url' => $new->url, 'date' => $new->created_at->format('Ymd'), 'id' => $new->id  ]) }}">{{ $new->title }}</a>
+                                    </h5>
+                                    <p class="card-text"> {!! htmlspecialchars_decode($new->abstract) !!} </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>
-        <!-- /.col-md-4 -->
-        <div class="col-md-4 mb-5">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h2 class="card-title">Card Two</h2>
-                    <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod tenetur ex natus at dolorem enim! Nesciunt pariatur voluptatem sunt quam eaque, vel, non in id dolore voluptates quos eligendi labore.</p>
-                </div>
-                <div class="card-footer">
-                    <a href="#" class="btn btn-primary btn-sm">More Info</a>
-                </div>
-            </div>
-        </div>
-        <!-- /.col-md-4 -->
-        <div class="col-md-4 mb-5">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h2 class="card-title">Card Three</h2>
-                    <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Rem magni quas ex numquam, maxime minus quam molestias corporis quod, ea minima accusamus.</p>
-                </div>
-                <div class="card-footer">
-                    <a href="#" class="btn btn-primary btn-sm">More Info</a>
-                </div>
-            </div>
-        </div>
-        <!-- /.col-md-4 -->
-
-    </div>
+    @endif
     <!-- /.row -->
+@endsection
+@section('javascript')
+    <script>
+        $(document).ready(function(){
+            $('#buscador').keydown(function(e){
+
+                var val = $(this).val();
+
+                $.ajax({
+                    type: 'POST',
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        q:val },
+                    url: "{{ route('news.search') }}",
+                    beforeSend:function(){
+                        $('.loaderNews').show();
+                        $('.contentNews').hide();
+                    },
+                    success: function (data) {
+
+                        if(data.length > 0)
+                        {
+                            for (var i in data)
+                            {
+                                console.log(data[i]);
+                                var html = '<div class="col-md-4 mb-5">' +
+                                    '<div class="card h-100">' +
+                                        '<img src="{{ asset('img') }}/'+data[i].img+'" class="card-img-top" alt="" title="'+data[i].title+'">' +
+                                        '<div class="card-body">' +
+                                            '<h5 class="card-title">' +
+                                                '<a href="{{ route('news.detail') }}/'+data[i].url+'/'+data[i].formattedDate+'/'+data[i].id+'">'+data[i].title+'</a>' +
+                                            '</h5>' +
+                                            '<p class="card-text">'+data[i].abstract+'</p>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>';
+
+                                $(document).find('.contentNews .row').html('');
+                                $(document).find('.contentNews .row').html(html);
+                            }
+                        }
+
+                    },
+                    complete:function(){
+                        $('.loaderNews').hide();
+                        $('.contentNews').show();
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        alert('Problemas con la consulta');
+                    }
+                });
+
+                console.log($(this).val());
+
+            });
+        });
+    </script>
 @endsection

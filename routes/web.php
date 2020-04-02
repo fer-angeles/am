@@ -13,10 +13,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', 'HomeController@index');
 
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+
+Route::prefix('News')->group(function () {
+    Route::get('/detail/{url?}/{date?}/{id?}', 'NewsController@detail')->name('news.detail');
+    Route::post('/buscar', 'HomeController@search')->name('news.search');
+});
+
